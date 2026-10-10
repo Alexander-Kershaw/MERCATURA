@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python build artefacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Test / quality artefacts
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.ruff_cache/
+.pyright/
+.mypy_cache/
+
+# SQLFluff
+.sqlfluffcache
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Databricks local state
+.databricks/
+
+# IDE / editor
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Temporary files
+*.tmp
+*.swp
+*~
