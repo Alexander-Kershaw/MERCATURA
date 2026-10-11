@@ -71,6 +71,9 @@ Build the Python distrubtion:
 uv build
 ```
 
+## Operational runbooks
+
+- [Azure development environment bootstrap](../runbooks/bootstrap-azure-development-environment.md)
 
 
 ## Repository Structure
