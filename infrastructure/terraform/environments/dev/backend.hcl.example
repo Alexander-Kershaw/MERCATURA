@@ -1,0 +1,3 @@
+storage_account_name = "terraform-state-storage-account-name"
+container_name       = "tfstate"
+key                  = "dev/azure.tfstate"

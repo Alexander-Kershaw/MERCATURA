@@ -47,3 +47,20 @@ htmlcov/
 *.tmp
 *.swp
 *~
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+.terraform.tfstate.lock.info
+crash.log
+crash.*.log
+
+# Environment-specific Terraform inputs
+*.tfvars
+*.auto.tfvars
+!*.tfvars.example
+
+# Terraform backend environment configuration
+backend.hcl

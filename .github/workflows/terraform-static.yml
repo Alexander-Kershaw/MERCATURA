@@ -1,0 +1,46 @@
+name: Terraform Static Checks
+
+on:
+  pull_request:
+    paths:
+      - "infrastructure/terraform/**"
+      - "scripts/check-terraform-static.sh"
+      - ".github/workflows/terraform-static.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "infrastructure/terraform/**"
+      - "scripts/check-terraform-static.sh"
+      - ".github/workflows/terraform-static.yml"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: terraform-static-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  terraform:
+    name: Terraform static validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: 1.16.1
+          terraform_wrapper: false
+
+      - name: Run Terraform static checks
+        run: ./scripts/check-terraform-static.sh
