@@ -1,0 +1,41 @@
+bundle:
+  name: mercatura
+  engine: direct
+
+include:
+  - resources/*.yml
+
+variables:
+  ci_service_principal_name:
+    description: Service principal application ID used by CI deployments.
+
+artifacts:
+  default:
+    type: whl
+    build: uv build --wheel
+    path: .
+
+targets:
+  dev:
+    default: true
+    mode: development
+
+    presets:
+      artifacts_dynamic_version: true
+
+    workspace:
+      host: https://adb-7405612176581578.18.azuredatabricks.net
+
+  ci:
+    run_as:
+      service_principal_name: ${var.ci_service_principal_name}
+
+    presets:
+      artifacts_dynamic_version: true
+      jobs_max_concurrent_runs: 1
+      tags:
+        deployment: github-actions
+        environment: dev
+
+    workspace:
+      host: https://adb-7405612176581578.18.azuredatabricks.net
