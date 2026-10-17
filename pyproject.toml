@@ -55,3 +55,7 @@ indent-style = "space"
 pythonVersion = "3.12"
 typeCheckingMode = "standard"
 include = ["src", "tests"]
+
+[project.scripts]
+platform_smoke = "mercatura.platform.smoke:main"
+catalog_smoke = "mercatura.platform.catalog_smoke:main"
