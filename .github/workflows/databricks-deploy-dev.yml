@@ -87,6 +87,21 @@ jobs:
 
       - name: Deploy bundle
         run: databricks bundle deploy -t ci
+      
+      - name: Inspect deployed bundle
+        run: |
+          echo "=== Bundle summary ==="
+          databricks bundle summary -t ci
+
+          echo "=== Local bundle state ==="
+          find .databricks/bundle/ci -maxdepth 2 -type f -print || true
+
+          echo "=== Catalog smoke in direct-engine state ==="
+          grep -n "catalog_smoke" \
+            .databricks/bundle/ci/resources.json || true
+
+          echo "=== Jobs visible to CI identity ==="
+          databricks jobs list
 
       - name: Run governed platform smoke test
         run: databricks bundle run -t ci catalog_smoke
