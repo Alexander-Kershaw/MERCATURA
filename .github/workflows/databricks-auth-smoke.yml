@@ -1,0 +1,39 @@
+name: Databricks CI Authentication Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  databricks-auth:
+    name: Verify Databricks workload identity
+    runs-on: ubuntu-latest
+
+    environment: databricks-dev
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      DATABRICKS_HOST: https://adb-7405612176581578.18.azuredatabricks.net
+      DATABRICKS_AUTH_TYPE: azure-cli
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Authenticate to Microsoft Entra ID
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Install Databricks CLI
+        uses: databricks/setup-cli@v1.21.0
+
+      - name: Verify Databricks identity
+        run: databricks current-user me
