@@ -103,5 +103,38 @@ jobs:
           echo "=== Jobs visible to CI identity ==="
           databricks jobs list
 
+      - name: Verify deployed bundle resources
+        run: |
+          SUMMARY="$(databricks bundle summary -t ci --output json)"
+
+          echo "${SUMMARY}" | jq '.resources.jobs'
+
+          JOB_ID="$(
+            echo "${SUMMARY}" |
+            jq -r '.resources.jobs.catalog_smoke.id'
+          )"
+
+          databricks jobs get "${JOB_ID}" >/dev/null
+
+          echo "catalog_smoke deployment verified: ${JOB_ID}"
+
       - name: Run governed platform smoke test
-        run: databricks bundle run -t ci catalog_smoke
+        run: |
+          JOB_ID="$(
+            databricks bundle summary \
+              -t ci \
+              --output json |
+            jq -r '.resources.jobs.catalog_smoke.id'
+          )"
+
+          if [[ -z "${JOB_ID}" || "${JOB_ID}" == "null" ]]; then
+            echo "catalog_smoke job ID was not found in bundle deployment state"
+            exit 1
+          fi
+
+          echo "Running deployed catalog_smoke job: ${JOB_ID}"
+
+          databricks jobs run-now \
+            "${JOB_ID}" \
+            --timeout 30m
+
