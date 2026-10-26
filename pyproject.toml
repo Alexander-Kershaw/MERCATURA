@@ -7,7 +7,9 @@ authors = [
     { name = "Alexander-Kershaw", email = "akershaw@cloud-9.earth" }
 ]
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "faker>=40.43.0",
+]
 
 [build-system]
 requires = ["uv_build>=0.11.32,<0.12.0"]

@@ -24,7 +24,7 @@ def build_context() -> SimulationContext:
 def test_manifest_contains_simulation_metadata() -> None:
     context: SimulationContext = build_context()
 
-    manifest = SimulationManifest.from_context(
+    manifest: SimulationManifest = SimulationManifest.from_context(
         context,
         created_at=datetime(
             year=2026,
@@ -45,8 +45,13 @@ def test_manifest_contains_simulation_metadata() -> None:
     assert manifest.markets == (
         "CN",
         "DE",
+        "FR",
         "GB",
+        "JP",
+        "KR",
+        "NL",
         "NO",
+        "PL",
         "RU",
         "US",
     )
@@ -55,7 +60,7 @@ def test_manifest_contains_simulation_metadata() -> None:
 def test_manifest_normalizes_scenario_order() -> None:
     context: SimulationContext = build_context()
 
-    manifest = SimulationManifest.from_context(
+    manifest: SimulationManifest = SimulationManifest.from_context(
         context,
         created_at=datetime(
             year=2026,
@@ -78,7 +83,7 @@ def test_manifest_converts_timestamp_to_utc() -> None:
 
     local_time: datetime = datetime.fromisoformat("2026-10-26T10:00:00+01:00")
 
-    manifest = SimulationManifest.from_context(
+    manifest: SimulationManifest = SimulationManifest.from_context(
         context,
         created_at=local_time,
     )
