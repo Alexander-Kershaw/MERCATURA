@@ -5,6 +5,7 @@ from mercatura.source.simulation.identity import build_simulation_id
 from mercatura.source.simulation.ids import (
     DeterministicIdGenerator,
 )
+from mercatura.source.simulation.manifest import SimulationManifest
 from mercatura.source.simulation.market import (
     DEFAULT_MARKETS,
     MarketConfig,
@@ -19,5 +20,6 @@ __all__: list[str] = [
     "SimulationClock",
     "SimulationConfig",
     "SimulationContext",
+    "SimulationManifest",
     "build_simulation_id",
 ]
