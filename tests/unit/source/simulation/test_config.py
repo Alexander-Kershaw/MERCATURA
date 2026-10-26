@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 
 from mercatura.source.simulation.config import SimulationConfig
+from mercatura.source.simulation.market import MarketConfig
 
 
 def test_config_calculates_inclusive_day_count() -> None:
@@ -51,3 +52,25 @@ def test_canonical_payload_normalizes_scenario_order() -> None:
     )
 
     assert first.canonical_payload() == second.canonical_payload()
+
+
+def test_config_rejects_duplicate_markets() -> None:
+    market = MarketConfig(
+        market_code="GB",
+        country_name="United Kingdom",
+        legal_entity="Mercatura UK Ltd",
+        currency="GBP",
+        locale="en_GB",
+        timezone="Europe/London",
+        tax_regime="GB_VAT",
+    )
+
+    with pytest.raises(
+        expected_exception=ValueError,
+        match="market_code values must be unique",
+    ):
+        SimulationConfig(
+            start_date=date(year=2024, month=1, day=1),
+            end_date=date(year=2026, month=12, day=31),
+            markets=(market, market),
+        )

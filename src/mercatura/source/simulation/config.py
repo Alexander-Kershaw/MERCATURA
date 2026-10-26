@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from datetime import date
 
+from mercatura.source.simulation.market import DEFAULT_MARKETS, MarketConfig
+
 
 @dataclass(frozen=True, slots=True)
 class SimulationConfig:
@@ -65,6 +67,8 @@ class SimulationConfig:
     generator_version: str = "0.1.0"
     scenarios: tuple[str, ...] = ()
     defects: tuple[str, ...] = ()
+    reporting_currency: str = "GBP"
+    markets: tuple[MarketConfig, ...] = DEFAULT_MARKETS
 
     def __post_init__(self) -> None:
         if self.start_date > self.end_date:
@@ -74,7 +78,23 @@ class SimulationConfig:
             raise ValueError("seed must be a non-negative integer")
 
         if not self.generator_version.strip():
-            raise ValueError("generator_version must be a non-empty string")
+            raise ValueError("generator_version must not be empty")
+
+        if len(self.reporting_currency) != 3 or not self.reporting_currency.isupper():
+            raise ValueError("reporting_currency must be a three-character uppercase currency code")
+
+        if not self.markets:
+            raise ValueError("at least one market must be configured")
+
+        market_codes: list[str] = [market.market_code for market in self.markets]
+
+        if len(market_codes) != len(set(market_codes)):
+            raise ValueError("market_code values must be unique")
+
+        legal_entities: list[str] = [market.legal_entity for market in self.markets]
+
+        if len(legal_entities) != len(set(legal_entities)):
+            raise ValueError("legal_entity values must be unique")
 
     @property
     def day_count(self) -> int:
@@ -88,4 +108,9 @@ class SimulationConfig:
             "generator_version": self.generator_version,
             "scenarios": sorted(self.scenarios),
             "defects": sorted(self.defects),
+            "markets": [
+                market.canonical_payload()
+                for market in sorted(self.markets, key=lambda item: item.market_code)
+            ],
+            "reporting_currency": self.reporting_currency,
         }
