@@ -2,10 +2,13 @@ from datetime import date
 from random import Random
 
 import pytest
+from faker import Faker
 
 from mercatura.source.simulation.config import SimulationConfig
 from mercatura.source.simulation.context import SimulationContext
 from mercatura.source.simulation.market import MarketConfig
+from mercatura.source.systems.pim.faker import build_pim_faker
+from mercatura.source.systems.pim.generator import generate_products
 
 
 def build_context(
@@ -92,3 +95,25 @@ def test_context_ids_are_deterministic() -> None:
         key="RU:000001",
         prefix="cus",
     )
+
+
+def test_pim_faker_is_deterministic() -> None:
+    first_context: SimulationContext = build_context()
+    second_context: SimulationContext = build_context()
+
+    first: Faker = build_pim_faker(
+        context=first_context,
+        namespace="test",
+    )
+
+    second: Faker = build_pim_faker(
+        context=second_context,
+        namespace="test",
+    )
+
+    assert first.last_name() == second.last_name()
+    assert first.color_name() == second.color_name()
+
+
+def test_product_generation_is_deterministic() -> None:
+    assert generate_products(context=build_context()) == generate_products(context=build_context())
