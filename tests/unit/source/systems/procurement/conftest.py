@@ -28,6 +28,14 @@ from mercatura.source.systems.pricing.generator import (
 from mercatura.source.systems.pricing.model import (
     ProductPrice,
 )
+from mercatura.source.systems.procurement.fulfilment_generator import (
+    generate_fulfilment,
+)
+from mercatura.source.systems.procurement.fulfilment_model import (
+    GoodsReceipt,
+    PurchaseOrderLineFulfilment,
+    SupplierShipment,
+)
 from mercatura.source.systems.procurement.generator import (
     generate_sourcing_agreements,
 )
@@ -185,3 +193,53 @@ def purchase_order_lines(
     ],
 ) -> tuple[PurchaseOrderLine, ...]:
     return purchase_order_dataset[1]
+
+
+@pytest.fixture(scope="session")
+def fulfilment_dataset(
+    context: SimulationContext,
+    purchase_orders: tuple[PurchaseOrder, ...],
+    purchase_order_lines: tuple[PurchaseOrderLine, ...],
+) -> tuple[
+    tuple[PurchaseOrderLineFulfilment, ...],
+    tuple[SupplierShipment, ...],
+    tuple[GoodsReceipt, ...],
+]:
+    return generate_fulfilment(
+        context,
+        purchase_orders,
+        purchase_order_lines,
+    )
+
+
+@pytest.fixture(scope="session")
+def line_fulfilments(
+    fulfilment_dataset: tuple[
+        tuple[PurchaseOrderLineFulfilment, ...],
+        tuple[SupplierShipment, ...],
+        tuple[GoodsReceipt, ...],
+    ],
+) -> tuple[PurchaseOrderLineFulfilment, ...]:
+    return fulfilment_dataset[0]
+
+
+@pytest.fixture(scope="session")
+def shipments(
+    fulfilment_dataset: tuple[
+        tuple[PurchaseOrderLineFulfilment, ...],
+        tuple[SupplierShipment, ...],
+        tuple[GoodsReceipt, ...],
+    ],
+) -> tuple[SupplierShipment, ...]:
+    return fulfilment_dataset[1]
+
+
+@pytest.fixture(scope="session")
+def goods_receipts(
+    fulfilment_dataset: tuple[
+        tuple[PurchaseOrderLineFulfilment, ...],
+        tuple[SupplierShipment, ...],
+        tuple[GoodsReceipt, ...],
+    ],
+) -> tuple[GoodsReceipt, ...]:
+    return fulfilment_dataset[2]
