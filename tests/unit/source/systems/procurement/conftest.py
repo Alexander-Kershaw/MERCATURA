@@ -6,6 +6,10 @@ from mercatura.source.simulation import (
     SimulationConfig,
     SimulationContext,
 )
+from mercatura.source.simulation.demand import (
+    DemandProfile,
+    generate_demand_profiles,
+)
 from mercatura.source.systems.assortment.generator import (
     generate_assortments,
 )
@@ -29,6 +33,13 @@ from mercatura.source.systems.procurement.generator import (
 )
 from mercatura.source.systems.procurement.model import (
     SourcingAgreement,
+)
+from mercatura.source.systems.procurement.purchase_order_generator import (
+    generate_purchase_orders,
+)
+from mercatura.source.systems.procurement.purchase_order_model import (
+    PurchaseOrder,
+    PurchaseOrderLine,
 )
 from mercatura.source.systems.supplier.capability_generator import (
     generate_supplier_capabilities,
@@ -123,3 +134,54 @@ def capabilities(
         suppliers,
         products,
     )
+
+
+@pytest.fixture(scope="session")
+def demand_profiles(
+    context: SimulationContext,
+    products: tuple[Product, ...],
+    assortments: tuple[ProductMarketAssortment, ...],
+) -> tuple[DemandProfile, ...]:
+    return generate_demand_profiles(
+        context,
+        products,
+        assortments,
+    )
+
+
+@pytest.fixture(scope="session")
+def purchase_order_dataset(
+    context: SimulationContext,
+    assortments: tuple[ProductMarketAssortment, ...],
+    agreements: tuple[SourcingAgreement, ...],
+    demand_profiles: tuple[DemandProfile, ...],
+) -> tuple[
+    tuple[PurchaseOrder, ...],
+    tuple[PurchaseOrderLine, ...],
+]:
+    return generate_purchase_orders(
+        context,
+        assortments,
+        agreements,
+        demand_profiles,
+    )
+
+
+@pytest.fixture(scope="session")
+def purchase_orders(
+    purchase_order_dataset: tuple[
+        tuple[PurchaseOrder, ...],
+        tuple[PurchaseOrderLine, ...],
+    ],
+) -> tuple[PurchaseOrder, ...]:
+    return purchase_order_dataset[0]
+
+
+@pytest.fixture(scope="session")
+def purchase_order_lines(
+    purchase_order_dataset: tuple[
+        tuple[PurchaseOrder, ...],
+        tuple[PurchaseOrderLine, ...],
+    ],
+) -> tuple[PurchaseOrderLine, ...]:
+    return purchase_order_dataset[1]
