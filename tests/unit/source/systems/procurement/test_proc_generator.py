@@ -25,6 +25,9 @@ from mercatura.source.systems.procurement.generator import (
 from mercatura.source.systems.procurement.model import (
     SourcingAgreement,
 )
+from mercatura.source.systems.supplier.capability_model import (
+    SupplierCapability,
+)
 from mercatura.source.systems.supplier.model import (
     Supplier,
 )
@@ -66,6 +69,7 @@ def test_generation_is_deterministic(
     products: tuple[Product, ...],
     assortments: tuple[ProductMarketAssortment, ...],
     suppliers: tuple[Supplier, ...],
+    capabilities: tuple[SupplierCapability, ...],
     prices: tuple[ProductPrice, ...],
 ) -> None:
     first: tuple[SourcingAgreement, ...] = generate_sourcing_agreements(
@@ -73,6 +77,7 @@ def test_generation_is_deterministic(
         products,
         assortments,
         suppliers,
+        capabilities,
         prices,
     )
 
@@ -81,6 +86,7 @@ def test_generation_is_deterministic(
         products,
         assortments,
         suppliers,
+        capabilities,
         prices,
     )
 
@@ -388,6 +394,7 @@ def test_supplier_input_order_does_not_change_results(
     products: tuple[Product, ...],
     assortments: tuple[ProductMarketAssortment, ...],
     suppliers: tuple[Supplier, ...],
+    capabilities: tuple[SupplierCapability, ...],
     prices: tuple[ProductPrice, ...],
 ) -> None:
     first: tuple[SourcingAgreement, ...] = generate_sourcing_agreements(
@@ -395,6 +402,7 @@ def test_supplier_input_order_does_not_change_results(
         products,
         assortments,
         suppliers,
+        capabilities,
         prices,
     )
 
@@ -403,6 +411,7 @@ def test_supplier_input_order_does_not_change_results(
         products,
         assortments,
         tuple(reversed(suppliers)),
+        capabilities,
         prices,
     )
 
@@ -414,6 +423,7 @@ def test_assortment_input_order_does_not_change_results(
     products: tuple[Product, ...],
     assortments: tuple[ProductMarketAssortment, ...],
     suppliers: tuple[Supplier, ...],
+    capabilities: tuple[SupplierCapability, ...],
     prices: tuple[ProductPrice, ...],
 ) -> None:
     first: tuple[SourcingAgreement, ...] = generate_sourcing_agreements(
@@ -421,6 +431,7 @@ def test_assortment_input_order_does_not_change_results(
         products,
         assortments,
         suppliers,
+        capabilities,
         prices,
     )
 
@@ -429,7 +440,33 @@ def test_assortment_input_order_does_not_change_results(
         products,
         tuple(reversed(assortments)),
         suppliers,
+        capabilities,
         prices,
     )
 
     assert normalize(agreements=first) == normalize(agreements=second)
+
+
+def test_every_sourcing_supplier_has_required_capability(
+    agreements: tuple[SourcingAgreement, ...],
+    assortments: tuple[ProductMarketAssortment, ...],
+    products: tuple[Product, ...],
+    capabilities: tuple[SupplierCapability, ...],
+) -> None:
+    product_by_id: dict[str, Product] = {product.product_id: product for product in products}
+
+    capability_keys: set[tuple[str, str]] = {
+        (
+            capability.supplier_id,
+            capability.department_code,
+        )
+        for capability in capabilities
+    }
+
+    for agreement in agreements:
+        product: Product = product_by_id[agreement.product_id]
+
+        assert (
+            agreement.supplier_id,
+            product.department_code,
+        ) in capability_keys

@@ -30,6 +30,12 @@ from mercatura.source.systems.procurement.generator import (
 from mercatura.source.systems.procurement.model import (
     SourcingAgreement,
 )
+from mercatura.source.systems.supplier.capability_generator import (
+    generate_supplier_capabilities,
+)
+from mercatura.source.systems.supplier.capability_model import (
+    SupplierCapability,
+)
 from mercatura.source.systems.supplier.generator import (
     generate_suppliers,
 )
@@ -93,6 +99,7 @@ def agreements(
     products: tuple[Product, ...],
     assortments: tuple[ProductMarketAssortment, ...],
     suppliers: tuple[Supplier, ...],
+    capabilities: tuple[SupplierCapability, ...],
     prices: tuple[ProductPrice, ...],
 ) -> tuple[SourcingAgreement, ...]:
     return generate_sourcing_agreements(
@@ -100,5 +107,19 @@ def agreements(
         products,
         assortments,
         suppliers,
+        capabilities,
         prices,
+    )
+
+
+@pytest.fixture(scope="session")
+def capabilities(
+    context: SimulationContext,
+    suppliers: tuple[Supplier, ...],
+    products: tuple[Product, ...],
+) -> tuple[SupplierCapability, ...]:
+    return generate_supplier_capabilities(
+        context,
+        suppliers,
+        products,
     )

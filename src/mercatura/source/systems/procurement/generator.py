@@ -17,6 +17,7 @@ from mercatura.source.systems.procurement.config import (
     ProcurementSimulationConfig,
 )
 from mercatura.source.systems.procurement.model import SourcingAgreement, SourcingRole
+from mercatura.source.systems.supplier.capability_model import SupplierCapability
 from mercatura.source.systems.supplier.model import Supplier
 
 
@@ -25,10 +26,14 @@ def generate_sourcing_agreements(
     products: tuple[Product, ...],
     assortments: tuple[ProductMarketAssortment, ...],
     suppliers: tuple[Supplier, ...],
+    capabilities: tuple[SupplierCapability, ...],
     prices: tuple[ProductPrice, ...],
     *,
     procurement_config: ProcurementSimulationConfig = (DEFAULT_PROCUREMENT_CONFIG),
 ) -> tuple[SourcingAgreement, ...]:
+
+    capabilities_by_supplier: dict[str, set[str]] = _capabilities_by_supplier(capabilities)
+
     products_by_id: dict[str, Product] = {product.product_id: product for product in products}
 
     initial_prices: dict[str, ProductPrice] = _initial_prices_by_assortment(prices)
@@ -46,6 +51,7 @@ def generate_sourcing_agreements(
                 assortment=assortment,
                 product=product,
                 suppliers=suppliers,
+                capabilities_by_supplier=capabilities_by_supplier,
                 initial_price=initial_price,
                 config=procurement_config,
             )
@@ -115,11 +121,24 @@ def _roles_for_count(
 def _eligible_suppliers(
     *,
     assortment: ProductMarketAssortment,
+    product: Product,
     suppliers: tuple[Supplier, ...],
+    capabilities_by_supplier: dict[
+        str,
+        set[str],
+    ],
 ) -> list[Supplier]:
     eligible: list[Supplier] = []
 
     for supplier in suppliers:
+        supplier_capabilities: set[str] = capabilities_by_supplier.get(
+            supplier.supplier_id,
+            set(),
+        )
+
+        if product.department_code not in supplier_capabilities:
+            continue
+
         if supplier.created_at > assortment.ranged_from:
             continue
 
@@ -204,6 +223,7 @@ def _generate_assortment_sourcing(
     assortment: ProductMarketAssortment,
     product: Product,
     suppliers: tuple[Supplier, ...],
+    capabilities_by_supplier: dict[str, set[str]],
     initial_price: ProductPrice,
     config: ProcurementSimulationConfig,
 ) -> list[SourcingAgreement]:
@@ -218,13 +238,35 @@ def _generate_assortment_sourcing(
         config=config,
     )
 
+    eligible = _eligible_suppliers(
+        assortment=assortment,
+        product=product,
+        suppliers=suppliers,
+        capabilities_by_supplier=(capabilities_by_supplier),
+    )
+
+    if not eligible:
+        raise ValueError(
+            f"no capable suppliers available for "
+            f"{assortment.market_code} "
+            f"{product.sku} "
+            f"({product.department_code})"
+        )
+
+    count = min(
+        count,
+        len(eligible),
+    )
+
     roles: tuple[Literal["PRIMARY"] | Literal["SECONDARY"] | Literal["BACKUP"], ...] = (
         _roles_for_count(count)
     )
 
     eligible: list[Supplier] = _eligible_suppliers(
         assortment=assortment,
+        product=product,
         suppliers=suppliers,
+        capabilities_by_supplier=(capabilities_by_supplier),
     )
 
     selected: list[Supplier] = _select_suppliers(
@@ -416,3 +458,17 @@ def _round_money(
         exp=Decimal(value="1"),
         rounding=ROUND_HALF_UP,
     ) * minor_unit
+
+
+def _capabilities_by_supplier(
+    capabilities: tuple[SupplierCapability, ...],
+) -> dict[str, set[str]]:
+    result: dict[
+        str,
+        set[str],
+    ] = defaultdict(set)
+
+    for capability in capabilities:
+        result[capability.supplier_id].add(capability.department_code)
+
+    return dict(result)
