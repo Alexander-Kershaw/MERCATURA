@@ -1,7 +1,9 @@
 import random
+import re
+import unicodedata
 from collections import defaultdict
 from datetime import date, timedelta
-from typing import Protocol, cast
+from typing import Literal, Protocol, cast
 
 from faker import Faker
 
@@ -46,6 +48,88 @@ class _CustomerFaker(Protocol):
     ) -> str: ...
 
 
+EMAIL_DOMAINS_BY_MARKET: dict[
+    str,
+    tuple[str, ...],
+] = {
+    "GB": (
+        "gmail.com",
+        "outlook.com",
+        "hotmail.co.uk",
+        "icloud.com",
+        "yahoo.co.uk",
+        "btinternet.com",
+    ),
+    "DE": (
+        "gmail.com",
+        "outlook.de",
+        "web.de",
+        "gmx.de",
+        "icloud.com",
+    ),
+    "US": (
+        "gmail.com",
+        "outlook.com",
+        "yahoo.com",
+        "icloud.com",
+        "hotmail.com",
+    ),
+    "CN": (
+        "qq.com",
+        "163.com",
+        "126.com",
+        "outlook.com",
+        "icloud.com",
+    ),
+    "NO": (
+        "gmail.com",
+        "outlook.com",
+        "online.no",
+        "icloud.com",
+        "hotmail.com",
+    ),
+    "RU": (
+        "mail.ru",
+        "yandex.ru",
+        "gmail.com",
+        "outlook.com",
+    ),
+    "JP": (
+        "gmail.com",
+        "yahoo.co.jp",
+        "outlook.jp",
+        "icloud.com",
+    ),
+    "KR": (
+        "gmail.com",
+        "naver.com",
+        "daum.net",
+        "outlook.com",
+    ),
+    "FR": (
+        "gmail.com",
+        "outlook.fr",
+        "orange.fr",
+        "free.fr",
+        "icloud.com",
+    ),
+    "NL": (
+        "gmail.com",
+        "outlook.com",
+        "ziggo.nl",
+        "icloud.com",
+        "hotmail.com",
+    ),
+    "PL": (
+        "gmail.com",
+        "outlook.com",
+        "wp.pl",
+        "onet.pl",
+        "interia.pl",
+    ),
+}
+
+
 def generate_customers(
     context: SimulationContext,
     *,
@@ -60,6 +144,8 @@ def generate_customers(
     }
 
     geography_by_market: dict[str, tuple[CustomerGeography, ...]] = _group_geography_by_market()
+
+    used_emails: set[str] = set()
 
     customers: list[Customer] = []
 
@@ -78,7 +164,7 @@ def generate_customers(
 
         fake: _CustomerFaker = cast(
             _CustomerFaker,
-            Faker(market.locale),
+            Faker(locale=market.locale),
         )
 
         fake.seed_instance(seed=context.seed_for(namespace=f"crm:faker:{market_code}"))
@@ -91,6 +177,7 @@ def generate_customers(
                 geography=geography,
                 fake=fake,
                 config=config,
+                used_emails=used_emails,
             )
         )
 
@@ -105,6 +192,7 @@ def _generate_market_customers(
     geography: tuple[CustomerGeography, ...],
     fake: _CustomerFaker,
     config: CustomerSimulationConfig,
+    used_emails: set[str],
 ) -> list[Customer]:
     customers: list[Customer] = []
 
@@ -118,7 +206,7 @@ def _generate_market_customers(
             x=context.seed_for(namespace=(f"crm:customer:{market_code}:{ordinal:06d}"))
         )
 
-        location: CustomerGeography = geography[rng.randrange(len(geography))]
+        location: CustomerGeography = geography[rng.randrange(start=len(geography))]
 
         created_at: date = _generate_created_at(
             context=context,
@@ -140,8 +228,11 @@ def _generate_market_customers(
         email: str | None = _generate_email(
             market_code=market_code,
             ordinal=ordinal,
+            first_name=first_name,
+            last_name=last_name,
             rng=rng,
             config=config,
+            used_emails=used_emails,
         )
 
         phone: str | None = _generate_phone(
@@ -151,9 +242,13 @@ def _generate_market_customers(
         )
 
         if email is None and phone is None:
-            email = _customer_email(
+            email = _generate_unique_email(
                 market_code=market_code,
                 ordinal=ordinal,
+                first_name=first_name,
+                last_name=last_name,
+                rng=rng,
+                used_emails=used_emails,
             )
 
         postal_code: str = str(object=fake.postcode()).strip()
@@ -241,24 +336,201 @@ def _generate_email(
     *,
     market_code: str,
     ordinal: int,
+    first_name: str,
+    last_name: str,
     rng: random.Random,
     config: CustomerSimulationConfig,
+    used_emails: set[str],
 ) -> str | None:
     if rng.random() < config.missing_email_probability:
         return None
 
-    return _customer_email(
+    return _generate_unique_email(
         market_code=market_code,
         ordinal=ordinal,
+        first_name=first_name,
+        last_name=last_name,
+        rng=rng,
+        used_emails=used_emails,
     )
 
 
-def _customer_email(
+def _generate_unique_email(
     *,
     market_code: str,
     ordinal: int,
+    first_name: str,
+    last_name: str,
+    rng: random.Random,
+    used_emails: set[str],
 ) -> str:
-    return f"customer.{market_code.lower()}.{ordinal:06d}@mail.example"
+    domains: tuple[str, ...] | None = EMAIL_DOMAINS_BY_MARKET.get(market_code)
+
+    if not domains:
+        raise ValueError(f"no email domains configured for market {market_code}")
+
+    domain: str = rng.choice(seq=domains)
+
+    base_local_part: str = _generate_local_part(
+        market_code=market_code,
+        ordinal=ordinal,
+        first_name=first_name,
+        last_name=last_name,
+        rng=rng,
+    )
+
+    candidate: str = (f"{base_local_part}@{domain}").lower()
+
+    if candidate not in used_emails:
+        used_emails.add(candidate)
+
+        return candidate
+
+    suffix: int = ordinal % 100
+
+    candidate = (f"{base_local_part}{suffix:02d}@{domain}").lower()
+
+    if candidate not in used_emails:
+        used_emails.add(candidate)
+
+        return candidate
+
+    candidate = (f"{base_local_part}{ordinal:06d}@{domain}").lower()
+
+    if candidate in used_emails:
+        raise ValueError(
+            f"unable to generate unique customer email for {market_code}-{ordinal:06d}"
+        )
+
+    used_emails.add(candidate)
+
+    return candidate
+
+
+def _generate_local_part(
+    *,
+    market_code: str,
+    ordinal: int,
+    first_name: str,
+    last_name: str,
+    rng: random.Random,
+) -> str:
+    first: str = _ascii_email_token(value=first_name)
+
+    last: str = _ascii_email_token(value=last_name)
+
+    if first and last:
+        styles = (
+            f"{first}.{last}",
+            f"{first}{last}",
+            f"{first}_{last}",
+            f"{first[0]}{last}",
+            f"{last}.{first}",
+        )
+
+        return rng.choice(seq=styles)
+
+    if first:
+        return f"{first}{rng.randint(a=10, b=99)}"
+
+    if last:
+        return f"{last}{rng.randint(a=10, b=99)}"
+
+    return _fallback_email_handle(
+        market_code=market_code,
+        ordinal=ordinal,
+        rng=rng,
+    )
+
+
+def _ascii_email_token(
+    value: str,
+) -> str:
+    normalised: str = unicodedata.normalize(
+        "NFKD",
+        value,
+    )
+
+    ascii_value: str = (
+        normalised.encode(
+            encoding="ascii",
+            errors="ignore",
+        )
+        .decode(encoding="ascii")
+        .lower()
+    )
+
+    return re.sub(
+        pattern=r"[^a-z0-9]",
+        repl="",
+        string=ascii_value,
+    )
+
+
+def _fallback_email_handle(
+    *,
+    market_code: str,
+    ordinal: int,
+    rng: random.Random,
+) -> str:
+    prefixes_by_market: dict[str, tuple[str, str, str, str, str, str]] = {
+        "CN": (
+            "lin",
+            "chen",
+            "wei",
+            "ming",
+            "yu",
+            "xin",
+        ),
+        "JP": (
+            "haru",
+            "yuki",
+            "ren",
+            "aoi",
+            "sora",
+            "kei",
+        ),
+        "KR": (
+            "min",
+            "jin",
+            "seo",
+            "hyun",
+            "ji",
+            "young",
+        ),
+        "RU": (
+            "alex",
+            "misha",
+            "nik",
+            "katya",
+            "dima",
+            "anya",
+        ),
+    }
+
+    prefixes: (
+        tuple[str, str, str, str, str, str]
+        | tuple[Literal["user"], Literal["member"], Literal["hello"]]
+    ) = prefixes_by_market.get(
+        market_code,
+        (
+            "user",
+            "member",
+            "hello",
+        ),
+    )
+
+    prefix: str = rng.choice(seq=prefixes)
+
+    discriminator: int = (
+        ordinal * 37
+        + rng.randint(
+            a=0,
+            b=999,
+        )
+    ) % 10_000
+
+    return f"{prefix}{discriminator:04d}"
 
 
 def _generate_phone(
@@ -291,8 +563,8 @@ def _random_date(
 
     return start + timedelta(
         days=rng.randint(
-            0,
-            span,
+            a=0,
+            b=span,
         )
     )
 

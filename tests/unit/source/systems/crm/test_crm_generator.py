@@ -145,6 +145,31 @@ def test_deactivated_customer_is_not_active_on_deactivation_date(
 def test_customer_not_active_before_creation(
     customers: tuple[Customer, ...],
 ) -> None:
-    customer = customers[0]
+    customer: Customer = customers[0]
 
-    assert not customer.is_active_on(customer.created_at - timedelta(days=1))
+    assert not customer.is_active_on(value=customer.created_at - timedelta(days=1))
+
+
+def test_emails_do_not_use_placeholder_domain(
+    customers: tuple[Customer, ...],
+) -> None:
+    assert all(
+        not customer.email.endswith("@mail.example")
+        for customer in customers
+        if customer.email is not None
+    )
+
+
+def test_multiple_email_domains_exist(
+    customers: tuple[Customer, ...],
+) -> None:
+    domains: set[str] = {
+        customer.email.split(
+            sep="@",
+            maxsplit=1,
+        )[1]
+        for customer in customers
+        if customer.email is not None
+    }
+
+    assert len(domains) >= 20
