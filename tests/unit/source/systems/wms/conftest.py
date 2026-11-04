@@ -28,6 +28,14 @@ from mercatura.source.systems.pricing.generator import (
 from mercatura.source.systems.pricing.model import (
     ProductPrice,
 )
+from mercatura.source.systems.procurement.fulfilment_generator import (
+    generate_fulfilment,
+)
+from mercatura.source.systems.procurement.fulfilment_model import (
+    GoodsReceipt,
+    PurchaseOrderLineFulfilment,
+    SupplierShipment,
+)
 from mercatura.source.systems.procurement.generator import (
     generate_sourcing_agreements,
 )
@@ -62,6 +70,12 @@ from mercatura.source.systems.wms.assortment_model import (
 from mercatura.source.systems.wms.generator import (
     generate_inventory_locations,
     generate_warehouses,
+)
+from mercatura.source.systems.wms.inventory_generator import (
+    generate_inventory_movements,
+)
+from mercatura.source.systems.wms.inventory_model import (
+    InventoryMovement,
 )
 from mercatura.source.systems.wms.model import (
     InventoryLocation,
@@ -255,5 +269,48 @@ def inbound_routes(
         purchase_orders,
         purchase_order_lines,
         warehouse_assortments,
+        inventory_locations,
+    )
+
+
+@pytest.fixture(scope="session")
+def fulfilment_dataset(
+    wms_context: SimulationContext,
+    purchase_orders: tuple[PurchaseOrder, ...],
+    purchase_order_lines: tuple[PurchaseOrderLine, ...],
+) -> tuple[
+    tuple[PurchaseOrderLineFulfilment, ...],
+    tuple[SupplierShipment, ...],
+    tuple[GoodsReceipt, ...],
+]:
+    return generate_fulfilment(
+        wms_context,
+        purchase_orders,
+        purchase_order_lines,
+    )
+
+
+@pytest.fixture(scope="session")
+def goods_receipts(
+    fulfilment_dataset: tuple[
+        tuple[PurchaseOrderLineFulfilment, ...],
+        tuple[SupplierShipment, ...],
+        tuple[GoodsReceipt, ...],
+    ],
+) -> tuple[GoodsReceipt, ...]:
+    return fulfilment_dataset[2]
+
+
+@pytest.fixture(scope="session")
+def inventory_movements(
+    wms_context: SimulationContext,
+    goods_receipts: tuple[GoodsReceipt, ...],
+    inbound_routes: tuple[InboundReceiptRoute, ...],
+    inventory_locations: tuple[InventoryLocation, ...],
+) -> tuple[InventoryMovement, ...]:
+    return generate_inventory_movements(
+        wms_context,
+        goods_receipts,
+        inbound_routes,
         inventory_locations,
     )
