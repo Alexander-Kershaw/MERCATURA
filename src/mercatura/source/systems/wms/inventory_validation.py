@@ -18,6 +18,12 @@ from mercatura.source.systems.wms.routing_model import (
     InboundReceiptRoute,
 )
 
+GOODS_RECEIPT_MOVEMENT_TYPES: set[str] = {
+    "RECEIPT",
+    "PUTAWAY_OUT",
+    "PUTAWAY_IN",
+}
+
 
 def validate_inventory_movements(
     movements: tuple[InventoryMovement, ...],
@@ -29,13 +35,19 @@ def validate_inventory_movements(
 ) -> None:
     _validate_unique_movements(movements)
 
+    _validate_known_movement_types(movements)
+
+    goods_receipt_movements: tuple[InventoryMovement, ...] = tuple(
+        movement for movement in movements if (movement.source_reference_type == "GOODS_RECEIPT")
+    )
+
     _validate_receipt_coverage(
-        movements,
+        goods_receipt_movements,
         receipts,
     )
 
     _validate_groups(
-        movements,
+        goods_receipt_movements,
         receipts,
         routes,
         locations,
@@ -52,13 +64,24 @@ def _validate_unique_movements(
         raise ValueError("duplicate inventory movement_id detected")
 
 
+def _validate_known_movement_types(
+    movements: tuple[InventoryMovement, ...],
+) -> None:
+    valid_types = set(INVENTORY_MOVEMENT_TYPES)
+
+    for movement in movements:
+        if movement.movement_type not in valid_types:
+            raise ValueError("inventory movement has unknown movement type")
+
+
 def _validate_receipt_coverage(
     movements: tuple[InventoryMovement, ...],
     receipts: tuple[GoodsReceipt, ...],
 ) -> None:
-    receipts_by_id: dict[str, GoodsReceipt] = {
-        receipt.goods_receipt_id: receipt for receipt in receipts
-    }
+    receipts_by_id: dict[
+        str,
+        GoodsReceipt,
+    ] = {receipt.goods_receipt_id: receipt for receipt in receipts}
 
     grouped: dict[
         str,
@@ -81,11 +104,9 @@ def _validate_receipt_coverage(
     if actual_receipts != expected_receipts:
         raise ValueError("inventory movements do not cover every goods receipt")
 
-    for receipt_id, rows in grouped.items():
+    for _receipt_id, rows in grouped.items():
         if len(rows) != 3:
-            raise ValueError(
-                f"goods receipt {receipt_id} must produce exactly three inventory movements"
-            )
+            raise ValueError("invalid source reference type")
 
 
 def _validate_groups(
@@ -93,19 +114,22 @@ def _validate_groups(
     receipts: tuple[GoodsReceipt, ...],
     routes: tuple[InboundReceiptRoute, ...],
     locations: tuple[InventoryLocation, ...],
-    config: InventoryMovementSimulationConfig,
+    config: (InventoryMovementSimulationConfig),
 ) -> None:
-    receipts_by_id: dict[str, GoodsReceipt] = {
-        receipt.goods_receipt_id: receipt for receipt in receipts
-    }
+    receipts_by_id: dict[
+        str,
+        GoodsReceipt,
+    ] = {receipt.goods_receipt_id: receipt for receipt in receipts}
 
-    routes_by_line: dict[str, InboundReceiptRoute] = {
-        route.purchase_order_line_id: route for route in routes
-    }
+    routes_by_line: dict[
+        str,
+        InboundReceiptRoute,
+    ] = {route.purchase_order_line_id: route for route in routes}
 
-    locations_by_id: dict[str, InventoryLocation] = {
-        location.inventory_location_id: location for location in locations
-    }
+    locations_by_id: dict[
+        str,
+        InventoryLocation,
+    ] = {location.inventory_location_id: location for location in locations}
 
     grouped: dict[
         str,
@@ -166,7 +190,7 @@ def _validate_group_sequence(
 
     movement_types: set[str] = {movement.movement_type for movement in group}
 
-    if movement_types != set(INVENTORY_MOVEMENT_TYPES):
+    if movement_types != GOODS_RECEIPT_MOVEMENT_TYPES:
         raise ValueError("goods receipt must produce RECEIPT, PUTAWAY_OUT and PUTAWAY_IN movements")
 
 
@@ -223,9 +247,12 @@ def _validate_group_semantics(
         str,
         InventoryLocation,
     ],
-    config: InventoryMovementSimulationConfig,
+    config: (InventoryMovementSimulationConfig),
 ) -> None:
-    by_type: dict[str, InventoryMovement] = {movement.movement_type: movement for movement in group}
+    by_type: dict[
+        str,
+        InventoryMovement,
+    ] = {movement.movement_type: movement for movement in group}
 
     receipt_movement: InventoryMovement = by_type["RECEIPT"]
 
@@ -303,7 +330,7 @@ def _validate_group_semantics(
 
 
 def _maximum_configured_delay(
-    config: InventoryMovementSimulationConfig,
+    config: (InventoryMovementSimulationConfig),
 ) -> int:
     if config.two_day_putaway_probability > 0.0:
         return 2

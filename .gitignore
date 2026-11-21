@@ -64,3 +64,6 @@ crash.*.log
 
 # Terraform backend environment configuration
 backend.hcl
+
+# Simulator artifacts
+artifacts/

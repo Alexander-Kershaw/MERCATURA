@@ -91,8 +91,8 @@ def test_rejects_missing_movement(
     broken = inventory_movements[1:]
 
     with pytest.raises(
-        ValueError,
-        match="exactly three",
+        expected_exception=ValueError,
+        match="invalid source reference type",
     ):
         validate(
             movements=broken,
