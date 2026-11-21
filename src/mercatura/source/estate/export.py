@@ -93,7 +93,7 @@ def _write_jsonl(
                         ",",
                         ":",
                     ),
-                    ensure_ascii=False
+                    ensure_ascii=False,
                 )
             )
 
