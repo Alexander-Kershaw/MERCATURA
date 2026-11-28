@@ -1,0 +1,222 @@
+{
+  "schema_version": 1,
+  "datasets": [
+    {
+      "dataset_name": "stores",
+      "source_system": "store",
+      "model_name": "Store",
+      "grain": "One physical retail store",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "products",
+      "source_system": "pim",
+      "model_name": "Product",
+      "grain": "One global product",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "assortments",
+      "source_system": "assortment",
+      "model_name": "ProductMarketAssortment",
+      "grain": "One product-market assortment relationship",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "prices",
+      "source_system": "pricing",
+      "model_name": "ProductPrice",
+      "grain": "One effective price version for an assortment",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "demand_profiles",
+      "source_system": "simulation",
+      "model_name": "DemandProfile",
+      "grain": "One latent demand profile per market assortment",
+      "visibility": "internal"
+    },
+    {
+      "dataset_name": "suppliers",
+      "source_system": "supplier",
+      "model_name": "Supplier",
+      "grain": "One supplier organisation",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "supplier_capabilities",
+      "source_system": "supplier",
+      "model_name": "SupplierCapability",
+      "grain": "One supplier capability relationship",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "sourcing_agreements",
+      "source_system": "procurement",
+      "model_name": "SourcingAgreement",
+      "grain": "One commercial sourcing agreement",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "purchase_orders",
+      "source_system": "procurement",
+      "model_name": "PurchaseOrder",
+      "grain": "One procurement order",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "purchase_order_lines",
+      "source_system": "procurement",
+      "model_name": "PurchaseOrderLine",
+      "grain": "One line within a purchase order",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "purchase_order_line_fulfilments",
+      "source_system": "procurement",
+      "model_name": "PurchaseOrderLineFulfilment",
+      "grain": "One fulfilment outcome per purchase order line",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "supplier_shipments",
+      "source_system": "procurement",
+      "model_name": "SupplierShipment",
+      "grain": "One inbound supplier shipment",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "goods_receipts",
+      "source_system": "procurement",
+      "model_name": "GoodsReceipt",
+      "grain": "One received supplier shipment",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "warehouses",
+      "source_system": "wms",
+      "model_name": "Warehouse",
+      "grain": "One warehouse facility",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "inventory_locations",
+      "source_system": "wms",
+      "model_name": "InventoryLocation",
+      "grain": "One logical warehouse inventory location",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "warehouse_assortments",
+      "source_system": "wms",
+      "model_name": "WarehouseAssortment",
+      "grain": "One warehouse-assortment stocking relationship",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "inbound_receipt_routes",
+      "source_system": "wms",
+      "model_name": "InboundReceiptRoute",
+      "grain": "One inbound route per purchase order line",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "inventory_movements",
+      "source_system": "wms",
+      "model_name": "InventoryMovement",
+      "grain": "One physical inventory movement at one location",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "customers",
+      "source_system": "crm",
+      "model_name": "Customer",
+      "grain": "One customer identity",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "loyalty_memberships",
+      "source_system": "loyalty",
+      "model_name": "LoyaltyMembership",
+      "grain": "One customer loyalty membership",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "orders",
+      "source_system": "oms",
+      "model_name": "Order",
+      "grain": "One customer order",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "order_items",
+      "source_system": "oms",
+      "model_name": "OrderItem",
+      "grain": "One line within a customer order",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "payment_attempts",
+      "source_system": "payments",
+      "model_name": "PaymentAttempt",
+      "grain": "One attempted payment transaction",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "fulfilment_requests",
+      "source_system": "fulfilment",
+      "model_name": "FulfilmentRequest",
+      "grain": "One request per eligible digital order line",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "fulfilment_allocations",
+      "source_system": "fulfilment",
+      "model_name": "FulfilmentAllocation",
+      "grain": "One warehouse allocation fragment",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "inventory_reservations",
+      "source_system": "fulfilment",
+      "model_name": "InventoryReservation",
+      "grain": "One inventory reservation per allocation",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "outbound_shipments",
+      "source_system": "fulfilment",
+      "model_name": "OutboundShipment",
+      "grain": "One outbound shipment per dispatched reservation",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "customer_returns",
+      "source_system": "returns",
+      "model_name": "CustomerReturn",
+      "grain": "One received customer return against a shipment",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "return_dispositions",
+      "source_system": "returns",
+      "model_name": "ReturnDisposition",
+      "grain": "One disposition decision per customer return",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "refunds",
+      "source_system": "payments",
+      "model_name": "Refund",
+      "grain": "One financial refund per received customer return",
+      "visibility": "source"
+    },
+    {
+      "dataset_name": "availability_snapshots",
+      "source_system": "availability",
+      "model_name": "AvailabilitySnapshot",
+      "grain": "One market assortment per snapshot date",
+      "visibility": "source"
+    }
+  ]
+}
